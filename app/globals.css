@@ -18,8 +18,8 @@ button { cursor: pointer; }
 .sidebar-collapsed .nav-item { padding-inline: 0; }
 .sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 25px; }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px; color: #fff; background: linear-gradient(145deg,#268cff,#1262c7); box-shadow: 0 4px 16px #1572e044; position: relative; }
-.brand-mark span { position: absolute; width: 4px; height: 4px; background: #9bd0ff; border-radius: 50%; right: 4px; top: 5px; }
+.brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px; overflow: hidden; background: #08090c; box-shadow: 0 4px 16px #1572e044; position: relative; }
+ .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1.05; letter-spacing: .08em; font-size: 11px; color: #eaf2fb; white-space: nowrap; }
 .brand-copy span { color: #7290ad; font-size: 9px; letter-spacing: .16em; margin-top: 4px; }
 .icon-button { background: transparent; color: #8496ad; border: 0; display: inline-grid; place-items: center; padding: 6px; border-radius: 6px; position: relative; }

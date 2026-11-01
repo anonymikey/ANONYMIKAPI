@@ -69,7 +69,7 @@ const metrics = [
 ]
 
 function Logo() {
-  return <div className="brand-mark" aria-hidden="true"><Network size={18} strokeWidth={2.5} /><span /></div>
+  return <div className="brand-mark"><img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-12MIwOyS13Ak3csSyWilaIvwbj7PkO.png" alt="ANONYMIKAPI logo" /></div>
 }
 
 function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: string }) {
@@ -89,7 +89,7 @@ export default function Page() {
     <div className="app-shell">
       <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''} ${mobileOpen ? 'sidebar-mobile-open' : ''}`}>
         <div className="sidebar-top">
-          <div className="brand"><Logo /><div className="brand-copy"><strong>API CONTROL</strong><span>CENTER</span></div></div>
+          <div className="brand"><Logo /><div className="brand-copy"><strong>ANONYMIKAPI</strong><span>CONTROL CENTER</span></div></div>
           <button className="icon-button sidebar-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X /></button>
           <button className="icon-button collapse-button" onClick={() => setCollapsed(!collapsed)} aria-label="Toggle sidebar">{collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}</button>
         </div>
