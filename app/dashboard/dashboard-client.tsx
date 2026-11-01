@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { FormEvent, useMemo, useState, useTransition } from 'react'
+import { createApi } from './actions'
 import {
   Activity,
   AlertTriangle,
@@ -83,8 +84,29 @@ export default function Page({ userName, data }: { userName: string; data: Dashb
   const [mobileOpen, setMobileOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'list' | 'grid'>('list')
+  const [addOpen, setAddOpen] = useState(false)
+  const [apiName, setApiName] = useState('')
+  const [keyPrefix, setKeyPrefix] = useState('')
+  const [formError, setFormError] = useState('')
+  const [isPending, startTransition] = useTransition()
 
-  const filteredApis = useMemo(() => apis.filter((api) => `${api.name} ${api.provider} ${api.category}`.toLowerCase().includes(search.toLowerCase())), [search])
+  const filteredApis = useMemo(() => apis.filter((api) => `${api.name} ${api.provider} ${api.category}`.toLowerCase().includes(search.toLowerCase())), [apis, search])
+
+  function handleAddApi(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setFormError('')
+    startTransition(async () => {
+      const result = await createApi({ name: apiName, keyPrefix })
+      if (result.error) {
+        setFormError(result.error)
+        return
+      }
+      setApiName('')
+      setKeyPrefix('')
+      setAddOpen(false)
+      window.location.reload()
+    })
+  }
 
   return (
     <div className="app-shell">
@@ -104,10 +126,11 @@ export default function Page({ userName, data }: { userName: string; data: Dashb
       <main className="main-content">
         <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button><div className="breadcrumbs"><span>Workspace</span><span>/</span><strong>{active}</strong></div></div><div className="topbar-right"><div className="global-search"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search APIs, providers..." aria-label="Search APIs and providers" /><kbd>⌘ K</kbd></div><button className="icon-button" aria-label="Notifications"><Bell /><i className="notification-dot" /></button><div className="topbar-divider" /><div className="profile"><div className="profile-avatar">{userName.slice(0, 2).toUpperCase()}</div><div className="profile-copy"><strong>{userName}</strong><span>Administrator</span></div><ChevronDown size={14} /></div></div></header>
         <div className="page-container">
-          <section className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> PRIVATE WORKSPACE</div><h1>{active === 'Overview' ? `Good morning, ${userName.split(' ')[0]}` : active}</h1><p>{active === 'Overview' ? 'Here is what is happening across your API ecosystem.' : `Manage and monitor your ${active.toLowerCase()} from one place.`}</p></div><div className="heading-actions"><button className="button button-secondary"><LifeBuoy size={16} /> Help center</button><button className="button button-primary"><Plus size={16} /> Add API</button></div></section>
+          <section className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> PRIVATE WORKSPACE</div><h1>{active === 'Overview' ? `Good morning, ${userName.split(' ')[0]}` : active}</h1><p>{active === 'Overview' ? 'Here is what is happening across your API ecosystem.' : `Manage and monitor your ${active.toLowerCase()} from one place.`}</p></div><div className="heading-actions"><button className="button button-secondary"><LifeBuoy size={16} /> Help center</button><button className="button button-primary" onClick={() => { setFormError(''); setAddOpen(true) }}><Plus size={16} /> Add API</button></div></section>
           {active === 'Overview' ? <Overview metrics={metrics} apis={apis} hasData={data.hasData} /> : <Placeholder title={active} />}
           <footer className="page-footer"><span>API CONTROL CENTER <b>v1.0.0</b></span><span><span className="live-dot" /> Catalogue synced 8 min ago</span></footer>
         </div>
+        {addOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setAddOpen(false) }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-api-title"><div className="modal-header"><div><p className="eyebrow">WORKSPACE CREDENTIAL</p><h2 id="add-api-title">Add an API</h2><p>Save a managed API credential to your private workspace.</p></div><button className="icon-button" type="button" onClick={() => setAddOpen(false)} aria-label="Close Add API dialog"><X /></button></div><form className="modal-form" onSubmit={handleAddApi}><label><span>API name</span><input value={apiName} onChange={(event) => setApiName(event.target.value)} placeholder="e.g. OpenWeather" required minLength={2} maxLength={80} /></label><label><span>Key prefix</span><input value={keyPrefix} onChange={(event) => setKeyPrefix(event.target.value)} placeholder="e.g. sk_live" required minLength={4} maxLength={32} /><small>Only the non-secret prefix is stored. Never paste a full secret key here.</small></label>{formError && <p className="auth-error" role="alert">{formError}</p>}<div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setAddOpen(false)}>Cancel</button><button className="button button-primary" type="submit" disabled={isPending}>{isPending ? 'Saving...' : 'Save API'}</button></div></form></section></div>}
       </main>
     </div>
   )
