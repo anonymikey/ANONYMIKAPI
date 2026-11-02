@@ -1,30 +1,24 @@
-import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core"
-
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: integer("emailVerified").notNull().default(0),
-  image: text("image"),
-  createdAt: timestamp("createdAt").notNull(),
-  updatedAt: timestamp("updatedAt").notNull(),
-})
+import { pgTable, text, timestamp, integer, serial, bigint } from "drizzle-orm/pg-core"
 
 export const apiKeys = pgTable("api_keys", {
-  id: text("id").primaryKey(),
-  userId: text("userId").notNull(),
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
-  keyPrefix: text("keyPrefix").notNull(),
-  lastUsedAt: timestamp("lastUsedAt"),
-  createdAt: timestamp("createdAt").notNull(),
+  keyPrefix: text("key_prefix").notNull(),
+  keyHash: text("key_hash").notNull(),
+  status: text("status").notNull().default("active"),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
 export const usageEvents = pgTable("usage_events", {
-  id: text("id").primaryKey(),
-  userId: text("userId").notNull(),
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  userId: text("user_id").notNull(),
   model: text("model").notNull(),
   provider: text("provider").notNull(),
+  endpoint: text("endpoint").notNull(),
   tokens: integer("tokens").notNull(),
-  costCents: integer("costCents").notNull(),
-  createdAt: timestamp("createdAt").notNull(),
+  latencyMs: integer("latency_ms").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 })
