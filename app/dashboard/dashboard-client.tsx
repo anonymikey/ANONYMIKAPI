@@ -153,4 +153,42 @@ function ModuleView({ title, apis, onAdd }: { title: string; apis: DashboardData
   return <div className="module-layout"><section className="module-hero panel"><div className="placeholder-icon"><Icon /></div><div><h2>{title}</h2><p>{copy.description}</p></div><button className="button button-primary" onClick={onAdd}><Plus size={16} /> {copy.action}</button></section><section className="panel module-list"><div className="panel-header"><div><h2>{title} activity</h2><p>{apis.length ? `${apis.length} connected API${apis.length === 1 ? '' : 's'} available` : 'Your workspace is ready for its first entry'}</p></div><button className="button button-secondary" onClick={onAdd}><Plus size={15} /> Add</button></div>{apis.length ? <div className="module-rows">{apis.map((api) => <div className="module-row" key={api.name}><div className={`api-logo ${api.color}`}>{api.name.slice(0, 1)}</div><div className="module-row-copy"><strong>{api.name}</strong><span>{api.provider} · {api.last}</span></div><Badge tone="success">{api.status}</Badge><button className="icon-button small" aria-label={`Open ${api.name}`}><ArrowUpRight /></button></div>)}</div> : <div className="module-empty"><Icon /><strong>No {title.toLowerCase()} yet</strong><span>Use the action above to get started. New records will appear here.</span><button className="button button-primary" onClick={onAdd}><Plus size={16} /> {copy.action}</button></div>}</section></div>
 }
 
-function AddApiDialog({ onClose }: { onClose: () => void }) { const router = useRouter(); const [name, setName] = useState(''); const [pending, setPending] = useState(false); const [error, setError] = useState(''); async function submit() { if (!name.trim() || pending) return; setPending(true); setError(''); try { await createApiKey(name); router.refresh(); onClose(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to add API'); setPending(false); } } return <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}><section className="add-dialog panel" role="dialog" aria-modal="true" aria-labelledby="add-api-title" onMouseDown={(event) => event.stopPropagation()}><div className="panel-header"><div><h2 id="add-api-title">Add an API</h2><p>Start by naming the API connection.</p></div><button className="icon-button" onClick={onClose} aria-label="Close"><X /></button></div><label className="dialog-field">API name<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Weather API" />{error && <span className="dialog-error" role="alert">{error}</span>}</label><div className="dialog-actions"><button className="button button-secondary" onClick={onClose}>Cancel</button><button className="button button-primary" disabled={!name.trim() || pending} onClick={submit}><Plus size={16} /> {pending ? 'Adding...' : 'Add API'}</button></div></section></div> }
+function AddApiDialog({ onClose }: { onClose: () => void }) {
+  const router = useRouter()
+  const [name, setName] = useState('')
+  const [provider, setProvider] = useState('APILayer')
+  const [baseUrl, setBaseUrl] = useState('')
+  const [plan, setPlan] = useState('free')
+  const [secret, setSecret] = useState('')
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+
+  async function submit() {
+    if (!name.trim() || !provider.trim() || !baseUrl.trim() || !secret.trim() || pending) return
+    setPending(true)
+    setError('')
+    try {
+      await createApiKey({ name, provider, baseUrl, plan, secret })
+      router.refresh()
+      onClose()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to add API')
+      setPending(false)
+    }
+  }
+
+  return <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
+    <section className="add-dialog panel" role="dialog" aria-modal="true" aria-labelledby="add-api-title" onMouseDown={(event) => event.stopPropagation()}>
+      <div className="panel-header"><div><h2 id="add-api-title">Add an API</h2><p>Save a provider key securely for API testing.</p></div><button className="icon-button" onClick={onClose} aria-label="Close"><X /></button></div>
+      <div className="dialog-form">
+        <label className="dialog-field">API name<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Aviationstack" /></label>
+        <label className="dialog-field">Provider<input value={provider} onChange={(event) => setProvider(event.target.value)} placeholder="e.g. APILayer" /></label>
+        <label className="dialog-field">Base URL<input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://api.aviationstack.com" /></label>
+        <label className="dialog-field">Plan<select value={plan} onChange={(event) => setPlan(event.target.value)}><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></label>
+        <label className="dialog-field">API key<input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder="Paste the key from your provider" autoComplete="off" /></label>
+        {error && <span className="dialog-error" role="alert">{error}</span>}
+      </div>
+      <div className="dialog-actions"><button className="button button-secondary" onClick={onClose}>Cancel</button><button className="button button-primary" disabled={!name.trim() || !provider.trim() || !baseUrl.trim() || !secret.trim() || pending} onClick={submit}><Plus size={16} /> {pending ? 'Adding...' : 'Add API'}</button></div>
+    </section>
+  </div>
+}
