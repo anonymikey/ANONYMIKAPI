@@ -83,8 +83,9 @@ export default function Page({ userName, data }: { userName: string; data: Dashb
   const [mobileOpen, setMobileOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'list' | 'grid'>('list')
+  const [addApiOpen, setAddApiOpen] = useState(false)
 
-  const filteredApis = useMemo(() => apis.filter((api) => `${api.name} ${api.provider} ${api.category}`.toLowerCase().includes(search.toLowerCase())), [search])
+  const filteredApis = useMemo(() => apis.filter((api) => `${api.name} ${api.provider} ${api.category}`.toLowerCase().includes(search.toLowerCase())), [apis, search])
 
   return (
     <div className="app-shell">
@@ -104,8 +105,9 @@ export default function Page({ userName, data }: { userName: string; data: Dashb
       <main className="main-content">
         <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button><div className="breadcrumbs"><span>Workspace</span><span>/</span><strong>{active}</strong></div></div><div className="topbar-right"><div className="global-search"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search APIs, providers..." aria-label="Search APIs and providers" /><kbd>⌘ K</kbd></div><button className="icon-button" aria-label="Notifications"><Bell /><i className="notification-dot" /></button><div className="topbar-divider" /><div className="profile"><div className="profile-avatar">{userName.slice(0, 2).toUpperCase()}</div><div className="profile-copy"><strong>{userName}</strong><span>Administrator</span></div><ChevronDown size={14} /></div></div></header>
         <div className="page-container">
-          <section className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> PRIVATE WORKSPACE</div><h1>{active === 'Overview' ? `Good morning, ${userName.split(' ')[0]}` : active}</h1><p>{active === 'Overview' ? 'Here is what is happening across your API ecosystem.' : `Manage and monitor your ${active.toLowerCase()} from one place.`}</p></div><div className="heading-actions"><button className="button button-secondary"><LifeBuoy size={16} /> Help center</button><button className="button button-primary"><Plus size={16} /> Add API</button></div></section>
-          {active === 'Overview' ? <Overview metrics={metrics} apis={apis} hasData={data.hasData} /> : <Placeholder title={active} />}
+          <section className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> PRIVATE WORKSPACE</div><h1>{active === 'Overview' ? `Good morning, ${userName.split(' ')[0]}` : active}</h1><p>{active === 'Overview' ? 'Here is what is happening across your API ecosystem.' : `Manage and monitor your ${active.toLowerCase()} from one place.`}</p></div><div className="heading-actions"><button className="button button-secondary"><LifeBuoy size={16} /> Help center</button><button className="button button-primary" onClick={() => setAddApiOpen(true)}><Plus size={16} /> Add API</button></div></section>
+          {active === 'Overview' ? <Overview metrics={metrics} apis={filteredApis} hasData={data.hasData} /> : <ModuleView title={active} apis={filteredApis} onAdd={() => setAddApiOpen(true)} />}
+          {addApiOpen && <AddApiDialog onClose={() => setAddApiOpen(false)} />}
           <footer className="page-footer"><span>API CONTROL CENTER <b>v1.0.0</b></span><span><span className="live-dot" /> Catalogue synced 8 min ago</span></footer>
         </div>
       </main>
@@ -127,4 +129,26 @@ function Overview({ metrics, apis, hasData }: { metrics: Metric[]; apis: Dashboa
 }
 
 function TimelineItem({ icon: Icon, color, title, detail, time }: { icon: typeof Plus; color: string; title: string; detail: string; time: string }) { return <div className="timeline-item"><div className={`timeline-icon ${color}`}><Icon /></div><div className="timeline-copy"><strong>{title}</strong><span>{detail}</span></div><time>{time}</time></div> }
-function Placeholder({ title }: { title: string }) { return <section className="placeholder panel"><div className="placeholder-icon"><Database /></div><h2>{title} workspace</h2><p>This module is structured and ready for live Supabase data. Connect your workspace when you are ready to replace the preview dataset.</p><button className="button button-primary"><Plus size={16} /> Create first record</button></section> }
+const moduleCopy: Record<string, { description: string; action: string; icon: typeof Activity }> = {
+  'API Explorer': { description: 'Search the catalogue and inspect available API access options.', action: 'Browse catalogue', icon: Globe2 },
+  'My APIs': { description: 'Manage the API credentials and endpoints connected to your workspace.', action: 'Add API', icon: Boxes },
+  Providers: { description: 'Review providers linked to your API catalogue and monitor their availability.', action: 'Connect provider', icon: Network },
+  Subscriptions: { description: 'Track plans, renewals, and access subscriptions for your workspace.', action: 'Create subscription', icon: Zap },
+  'Credentials Vault': { description: 'Keep API credentials organized and rotate keys without leaving the control center.', action: 'Add credential', icon: LockKeyhole },
+  'API Tester': { description: 'Run a request against a managed API and review the response.', action: 'Run a test', icon: TestTube2 },
+  Integrations: { description: 'Connect services that power your API workflows and notifications.', action: 'Add integration', icon: Code2 },
+  Projects: { description: 'Group APIs, credentials, and tests into focused projects.', action: 'Create project', icon: Rocket },
+  Monitoring: { description: 'Watch request health, latency, and availability across your APIs.', action: 'Create monitor', icon: Activity },
+  'Usage Analytics': { description: 'Understand request volume, token usage, and spend over time.', action: 'View analytics', icon: Gauge },
+  'Health Checks': { description: 'Set up recurring checks so issues are visible before users report them.', action: 'Add health check', icon: HeartPulse },
+  'Audit Logs': { description: 'Review security and administrative events for this workspace.', action: 'Export logs', icon: ListFilter },
+  Settings: { description: 'Configure workspace preferences, security, and account settings.', action: 'Edit settings', icon: Settings },
+}
+
+function ModuleView({ title, apis, onAdd }: { title: string; apis: DashboardData['apis']; onAdd: () => void }) {
+  const copy = moduleCopy[title] ?? { description: `Manage ${title.toLowerCase()} in your workspace.`, action: 'Create record', icon: Database }
+  const Icon = copy.icon
+  return <div className="module-layout"><section className="module-hero panel"><div className="placeholder-icon"><Icon /></div><div><h2>{title}</h2><p>{copy.description}</p></div><button className="button button-primary" onClick={onAdd}><Plus size={16} /> {copy.action}</button></section><section className="panel module-list"><div className="panel-header"><div><h2>{title} activity</h2><p>{apis.length ? `${apis.length} connected API${apis.length === 1 ? '' : 's'} available` : 'Your workspace is ready for its first entry'}</p></div><button className="button button-secondary" onClick={onAdd}><Plus size={15} /> Add</button></div>{apis.length ? <div className="module-rows">{apis.map((api) => <div className="module-row" key={api.name}><div className={`api-logo ${api.color}`}>{api.name.slice(0, 1)}</div><div className="module-row-copy"><strong>{api.name}</strong><span>{api.provider} · {api.last}</span></div><Badge tone="success">{api.status}</Badge><button className="icon-button small" aria-label={`Open ${api.name}`}><ArrowUpRight /></button></div>)}</div> : <div className="module-empty"><Icon /><strong>No {title.toLowerCase()} yet</strong><span>Use the action above to get started. New records will appear here.</span><button className="button button-primary" onClick={onAdd}><Plus size={16} /> {copy.action}</button></div>}</section></div>
+}
+
+function AddApiDialog({ onClose }: { onClose: () => void }) { const [name, setName] = useState(''); return <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}><section className="add-dialog panel" role="dialog" aria-modal="true" aria-labelledby="add-api-title" onMouseDown={(event) => event.stopPropagation()}><div className="panel-header"><div><h2 id="add-api-title">Add an API</h2><p>Start by naming the API connection.</p></div><button className="icon-button" onClick={onClose} aria-label="Close"><X /></button></div><label className="dialog-field">API name<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Weather API" /></label><div className="dialog-actions"><button className="button button-secondary" onClick={onClose}>Cancel</button><button className="button button-primary" disabled={!name.trim()} onClick={onClose}><Plus size={16} /> Add API</button></div></section></div> }
